@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>行政工作人员赋能平台</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+      .fade-in { animation: fadeIn 0.3s ease-in; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+// ============ ICONS ============
+const Icons = {
+  Book: () => (<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>),
+  Policy: () => (<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>),
+  Travel: () => (<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>),
+  Meeting: () => (<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>),
+  Supplier: () => (<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>),
+  Home: () => (<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>),
+  Star: () => (<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>),
+  Check: () => (<svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>),
+};
+
+// ============ DATA - Updated Weekly ============
+// Last updated: 2026-05-09
+const SITE_DATA = {
+  lastUpdated: "2026-05-09",
+  announcements: [
+    { date: "2026-05-08", title: "2026年企业差旅管理新规解读", tag: "政策" },
+    { date: "2026-05-06", title: "Q2行政采购预算编制指南发布", tag: "指南" },
+    { date: "2026-05-03", title: "北京地区会议场地价格动态更新", tag: "资源" },
+    { date: "2026-04-28", title: "新版员工差旅报销标准调整通知", tag: "通知" },
+  ],
+};
+
+// ============ HOME PAGE ============
+function HomePage({ setActiveTab }) {
+  const quickLinks = [
+    { title: "行政知识提升", desc: "体系化的行政管理知识库", tab: "knowledge", icon: <Icons.Book /> },
+    { title: "行业政策解析", desc: "最新政策动态与深度解读", tab: "policy", icon: <Icons.Policy /> },
+    { title: "差旅与签证", desc: "出行管理与签证办理指南", tab: "travel", icon: <Icons.Travel /> },
+    { title: "会议商务资源", desc: "场地、接待、活动资源库", tab: "meeting", icon: <Icons.Meeting /> },
+    { title: "供应商资源", desc: "优质供应商推荐与评估", tab: "supplier", icon: <Icons.Supplier /> },
+  ];
+
+  return (
+    <div className="fade-in">
+      <div className="bg-gradient-to-r from-blue-700 to-blue-900 text-white rounded-xl p-8 mb-8">
+        <h1 className="text-3xl font-bold mb-3">行政工作人员赋能平台</h1>
+        <p className="text-blue-100 text-lg mb-6">一站式行政管理知识库 · 政策解析 · 资源对接</p>
+        <div className="flex flex-wrap gap-3">
+          <span className="bg-blue-600 bg-opacity-50 px-4 py-2 rounded-lg text-sm">知识体系化</span>
+          <span className="bg-blue-600 bg-opacity-50 px-4 py-2 rounded-lg text-sm">资源全覆盖</span>
+          <span className="bg-blue-600 bg-opacity-50 px-4 py-2 rounded-lg text-sm">政策时效性</span>
+          <span className="bg-blue-600 bg-opacity-50 px-4 py-2 rounded-lg text-sm">供应商精选</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        {quickLinks.map((link) => (
+          <button key={link.tab} onClick={() => setActiveTab(link.tab)} className="bg-white border border-gray-200 rounded-xl p-5 text-left hover:shadow-lg hover:border-blue-300 transition-all group">
+            <div className="text-blue-600 mb-3 group-hover:text-blue-700">{link.icon}</div>
+            <h3 className="font-semibold text-gray-800 mb-1">{link.title}</h3>
+            <p className="text-sm text-gray-500">{link.desc}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-800">最新动态</h2>
+          <span className="text-xs text-gray-400">更新于 {SITE_DATA.lastUpdated}</span>
+        </div>
+        <div className="space-y-3">
+          {SITE_DATA.announcements.map((item, idx) => (
+            <div key={idx} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+              <div className="flex items-center gap-3">
+                <span className={`px-2 py-1 rounded text-xs font-medium ${item.tag === "政策" ? "bg-red-50 text-red-600" : item.tag === "指南" ? "bg-green-50 text-green-600" : item.tag === "资源" ? "bg-blue-50 text-blue-600" : "bg-yellow-50 text-yellow-600"}`}>{item.tag}</span>
+                <span className="text-gray-700">{item.title}</span>
+              </div>
+              <span className="text-sm text-gray-400">{item.date}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "知识文章", value: "200+", color: "text-blue-600" },
+          { label: "政策解读", value: "85+", color: "text-green-600" },
+          { label: "合作供应商", value: "150+", color: "text-purple-600" },
+          { label: "资源库更新", value: "每周", color: "text-orange-600" },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-white border border-gray-200 rounded-xl p-5 text-center">
+            <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+            <div className="text-sm text-gray-500 mt-1">{stat.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============ KNOWLEDGE PAGE ============
+function KnowledgePage() {
+  const [activeCategory, setActiveCategory] = useState("basics");
+  const categories = {
+    basics: { title: "行政管理基础", articles: [
+      { title: "行政管理岗位核心能力模型", content: "行政管理人员需具备六大核心能力：组织协调能力、沟通表达能力、应急处理能力、成本管控能力、服务意识以及信息化素养。其中组织协调能力是基础，包括会议组织、活动策划、跨部门协调等。建议行政人员每季度进行能力自评，针对薄弱项制定提升计划。", tags: ["能力模型", "自我提升"] },
+      { title: "企业行政管理制度体系搭建", content: "完整的行政管理制度体系包括：办公管理制度、资产管理制度、车辆管理制度、会议管理制度、接待管理制度、差旅管理制度、安全管理制度、后勤服务管理制度等。制度编写需遵循SMART原则，并定期（建议每年）进行制度审查和修订。", tags: ["制度建设", "体系化"] },
+      { title: "行政费用预算编制与管控", content: "行政预算通常占企业总预算的3%-8%。编制时需关注：固定成本（租金、物业、基础设施维护）约占60%；变动成本（差旅、接待、办公用品）约占30%；预备金建议留10%。预算管控建议采用月度预算追踪+季度预算复盘模式。", tags: ["预算管理", "成本控制"] },
+    ]},
+    efficiency: { title: "效率提升工具", articles: [
+      { title: "行政数字化办公工具推荐", content: "办公协同：飞书/钉钉/企业微信（日常沟通与审批）；项目管理：Teambition/飞书多维表格/Notion（项目跟踪）；文档管理：语雀/Confluence（知识沉淀）；资产管理：易点固定资产云（资产全生命周期管理）；访客管理：和融通/微信访客系统；会议管理：腾讯会议/Zoom/飞书会议。", tags: ["数字化", "工具推荐"] },
+      { title: "行政SOP标准化流程模板", content: "高频事务建议建立标准化SOP：入职办理（工位准备→设备发放→门禁开通→系统账号创建）；离职办理（资产回收→门禁注销→工位清理→档案归档）；会议组织（需求确认→场地预订→设备调试→会务服务→会后总结）；接待流程（需求对接→方案拟定→资源协调→现场执行→费用结算）。", tags: ["SOP", "流程标准化"] },
+      { title: "行政数据分析与汇报技巧", content: "行政工作数据化呈现要点：空间使用率（工位利用率、会议室使用率）、能耗数据（同比/环比）、满意度调查（NPS得分）、响应时效（平均工单响应时间）、成本效益（人均行政成本）。月度/季度报告建议用数据可视化呈现。", tags: ["数据分析", "汇报"] },
+    ]},
+    professional: { title: "专业能力进阶", articles: [
+      { title: "企业空间规划与办公环境优化", content: "现代办公空间规划趋势：混合办公模式下人均面积从8-10㎡可优化至6-8㎡；共享工位比例建议30%-50%；会议室配比建议每15-20人配1间小型会议室、每50人配1间中型会议室。环境优化重点：照明（300-500lux）、温湿度（22-26℃/40%-60%RH）、噪音控制（<45dB）。", tags: ["空间规划", "办公环境"] },
+      { title: "企业ESG与行政绿色管理", content: "行政部门在ESG中承担关键角色：环境方面需推动节能减排（LED照明、智能空调控制、垃圾分类）；社会方面需关注员工健康与安全（EHS管理、心理健康空间）；治理方面需建立透明的采购与供应商管理体系。建议设立年度碳减排目标和绿色采购比例指标。", tags: ["ESG", "绿色管理"] },
+      { title: "行政团队管理与梯队建设", content: "行政团队一般分为：前台服务组、后勤保障组、采购管理组、综合事务组。人才梯队建设需关注：岗位轮换（每1-2年）、专项培训（每季度）、管理梯队培养（年度），绩效考核建议采用KPI+OKR结合模式。", tags: ["团队管理", "人才培养"] },
+    ]},
+    certifications: { title: "资质认证与学习", articles: [
+      { title: "行政管理相关证书推荐", content: "推荐证书：行政管理师（中国管理科学学会）；企业行政管理师（人力资源和社会保障部）；PMP项目管理（PMI）；物业管理师（住建部）；安全工程师（应急管理部）。此外建议关注：商务礼仪培训师认证、ISO 41001设施管理体系内审员等。", tags: ["证书", "职业发展"] },
+      { title: "行政管理学习资源汇总", content: "线上平台：中国大学MOOC（行政管理课程免费）、得到APP（管理类音频课程）、混沌学园（创新管理）；行业社群：中国行政管理学会、HRoot行政精英社群；推荐书单：《行政管理学》（夏书章）、《卓有成效的管理者》（德鲁克）、《高效能人士的七个习惯》。", tags: ["学习资源", "社群"] },
+    ]},
+  };
+
+  return (
+    <div className="fade-in">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl p-6 mb-6">
+        <h1 className="text-2xl font-bold mb-2">行政工作知识提升</h1>
+        <p className="text-blue-100">体系化的行政管理知识库，助力专业能力全面提升</p>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-6">
+        {Object.entries(categories).map(([key, cat]) => (
+          <button key={key} onClick={() => setActiveCategory(key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeCategory === key ? "bg-blue-600 text-white shadow-md" : "bg-white border border-gray-200 text-gray-600 hover:border-blue-300"}`}>{cat.title}</button>
+        ))}
+      </div>
+      <div className="space-y-4">
+        {categories[activeCategory].articles.map((article, idx) => (
+          <div key={idx} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">{article.title}</h3>
+            <p className="text-gray-600 leading-relaxed mb-4">{article.content}</p>
+            <div className="flex gap-2">{article.tags.map((tag) => (<span key={tag} className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">{tag}</span>))}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============ POLICY PAGE ============
+function PolicyPage() {
+  const [activeArea, setActiveArea] = useState("labor");
+  const policyAreas = {
+    labor: { title: "劳动用工政策", policies: [
+      { title: "2026年最低工资标准调整", date: "2026-01", level: "国家级", summary: "全国各省市最低工资标准新一轮调整，一线城市月最低工资标准普遍上调至2800-3000元区间，二线城市2200-2600元。行政部门需关注：劳务派遣人员薪酬调整、保洁/安保等外包服务报价可能上涨。", action: "建议：及时更新外包合同薪酬条款，重新评估服务外包预算。" },
+      { title: "灵活用工平台管理规范", date: "2025-12", level: "部委级", summary: "人社部发布灵活用工平台监管新规，明确平台企业用工责任边界，规范劳动关系认定标准。对行政外包用工的合规性提出更高要求。", action: "建议：审查现有灵活用工合作平台资质，确保合同条款合规。" },
+    ]},
+    tax: { title: "税务财务政策", policies: [
+      { title: "差旅费税前扣除标准更新", date: "2026-03", level: "国家级", summary: "财政部更新企业差旅费税前扣除标准：住宿费据实扣除（需取得增值税专用发票）；交通费按等级标准扣除；伙食补助标准各地不同，一线城市100-120元/天。", action: "建议：更新企业差旅报销制度，对标新标准调整报销额度。" },
+      { title: "企业福利费用税务处理指引", date: "2026-02", level: "部委级", summary: "明确企业行政福利支出的税务处理：集体福利不超过工资总额14%可税前扣除；个人福利需并入员工个税申报。电子卡券发放需保留完整记录。", action: "建议：规范福利发放流程，建立福利费用台账，与财务部协同确保合规。" },
+    ]},
+    safety: { title: "安全环保政策", policies: [
+      { title: "办公场所消防安全管理新规", date: "2026-04", level: "部委级", summary: "应急管理部更新高层办公楼宇消防管理规定：每层需配备应急照明和疏散指示标志；每半年至少组织一次全员消防演练；消防控制室需24小时值班。", action: "建议：对照新规进行消防设施自查，更新消防演练计划，严禁电动车入楼充电。" },
+      { title: "办公环境空气质量管理标准", date: "2025-11", level: "标准类", summary: "GB/T 18883-2022《室内空气质量标准》要求：甲醛≤0.08mg/m³、PM2.5≤75μg/m³、CO₂≤1000ppm。新装修办公区需通风3个月以上。", action: "建议：建立定期空气质量检测机制，新装修区域严格执行入驻前检测流程。" },
+    ]},
+    realestate: { title: "不动产与租赁", policies: [
+      { title: "商业地产租赁合同备案新政", date: "2026-01", level: "地方级", summary: "多地要求商业租赁合同强制备案，且需在签订后30日内完成。未备案可能影响企业注册地址变更、营业执照办理等。", action: "建议：检查现有租赁合同备案情况，新签合同及时备案，转租需取得产权方书面同意。" },
+      { title: "办公楼宇节能改造补贴政策", date: "2025-10", level: "地方级", summary: "多地推出绿色建筑改造补贴，企业进行LED照明改造、中央空调能效提升等可申请30%-50%的费用补贴，单项目最高补贴50-200万元。", action: "建议：评估办公区域节能改造可行性，对接当地发改委了解具体申报流程。" },
+    ]},
+  };
+
+  return (
+    <div className="fade-in">
+      <div className="bg-gradient-to-r from-green-600 to-green-800 text-white rounded-xl p-6 mb-6">
+        <h1 className="text-2xl font-bold mb-2">行业政策收集与解析</h1>
+        <p className="text-green-100">实时追踪行政管理相关政策动态，提供深度解读与应对建议</p>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-6">
+        {Object.entries(policyAreas).map(([key, area]) => (
+          <button key={key} onClick={() => setActiveArea(key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeArea === key ? "bg-green-600 text-white shadow-md" : "bg-white border border-gray-200 text-gray-600 hover:border-green-300"}`}>{area.title}</button>
+        ))}
+      </div>
+      <div className="space-y-4">
+        {policyAreas[activeArea].policies.map((policy, idx) => (
+          <div key={idx} className="bg-white border border-gray-200 rounded-xl p-6">
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-800">{policy.title}</h3>
+              <div className="flex gap-2 flex-shrink-0">
+                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">{policy.date}</span>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${policy.level === "国家级" ? "bg-red-50 text-red-600" : policy.level === "部委级" ? "bg-orange-50 text-orange-600" : policy.level === "地方级" ? "bg-blue-50 text-blue-600" : "bg-gray-50 text-gray-600"}`}>{policy.level}</span>
+              </div>
+            </div>
+            <p className="text-gray-600 leading-relaxed mb-3">{policy.summary}</p>
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+              <p className="text-blue-700 text-sm font-medium">{policy.action}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============ TRAVEL & VISA PAGE ============
+function TravelPage() {
+  const [activeSection, setActiveSection] = useState("domestic");
+  const travelStandards = [
+    { level: "高管", transport: "商务舱/高铁一等座", hotelA: "≤1200元", hotelB: "≤800元", meal: "200元" },
+    { level: "总监", transport: "经济舱/高铁一等座", hotelA: "≤800元", hotelB: "≤600元", meal: "150元" },
+    { level: "经理", transport: "经济舱/高铁二等座", hotelA: "≤600元", hotelB: "≤450元", meal: "120元" },
+    { level: "员工", transport: "经济舱/高铁二等座", hotelA: "≤500元", hotelB: "≤350元", meal: "100元" },
+  ];
+  const destinations = [
+    { city: "新加坡", visa: "免签30天", currency: "SGD", tips: "出入境需填写SG Arrival Card电子卡" },
+    { city: "日本东京", visa: "需签证", currency: "JPY", tips: "建议提前兑换现金，IC交通卡方便出行" },
+    { city: "美国纽约", visa: "需B1签证", currency: "USD", tips: "EVUS登记需在出发前72小时完成" },
+    { city: "德国慕尼黑", visa: "需申根签", currency: "EUR", tips: "周日商店不营业，注意安排行程" },
+    { city: "泰国曼谷", visa: "免签30天", currency: "THB", tips: "注意携带现金入境要求（等值2万THB）" },
+    { city: "阿联酋迪拜", visa: "免签30天", currency: "AED", tips: "穿着需尊重当地文化，注意斋月时间" },
+  ];
+  const visaSteps = [
+    { step: 1, title: "获取工作许可通知", desc: "向当地外国专家局申请《外国人工作许可通知》，审批周期约15-20个工作日。" },
+    { step: 2, title: "申请工作签证(Z签)", desc: "凭工作许可通知到中国驻外使领馆申请Z字签证，有效期90天。" },
+    { step: 3, title: "办理工作许可证", desc: "入境后15日内到当地外专局办理《外国人工作许可证》，周期约10个工作日。" },
+    { step: 4, title: "办理居留许可", desc: "取得工作许可证后30日内到出入境管理局申请工作类居留许可，有效期1-5年。" },
+  ];
+  const platforms = [
+    { name: "携程商旅", advantage: "资源丰富，全球覆盖", suitable: "中大型企业", price: "按人次/年费" },
+    { name: "阿里商旅", advantage: "与钉钉深度集成", suitable: "钉钉生态企业", price: "免服务费" },
+    { name: "滴滴企业版", advantage: "用车管理便捷", suitable: "用车需求大", price: "预充值/后付" },
+    { name: "差旅壹号", advantage: "合规管控强", suitable: "央企/国企", price: "年费制" },
+    { name: "合思费控", advantage: "费控+差旅一体化", suitable: "中大型企业", price: "按需报价" },
+  ];
+
+  const sections = { domestic: "国内差旅管理", international: "国际差旅管理", visa: "工作签证指南", platforms: "差旅平台对比" };
+
+  return (
+    <div className="fade-in">
+      <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-xl p-6 mb-6">
+        <h1 className="text-2xl font-bold mb-2">差旅与工作签证</h1>
+        <p className="text-purple-100">全方位差旅管理指南与签证办理服务手册</p>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-6">
+        {Object.entries(sections).map(([key, title]) => (
+          <button key={key} onClick={() => setActiveSection(key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeSection === key ? "bg-purple-600 text-white shadow-md" : "bg-white border border-gray-200 text-gray-600 hover:border-purple-300"}`}>{title}</button>
+        ))}
+      </div>
+
+      {activeSection === "domestic" && (
+        <div className="space-y-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">差旅标准参考（2026年）</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="px-4 py-3 text-left font-medium text-gray-600">职级</th><th className="px-4 py-3 text-left font-medium text-gray-600">交通</th><th className="px-4 py-3 text-left font-medium text-gray-600">住宿（一线）</th><th className="px-4 py-3 text-left font-medium text-gray-600">住宿（二线）</th><th className="px-4 py-3 text-left font-medium text-gray-600">餐补/天</th></tr></thead>
+              <tbody className="divide-y divide-gray-100">{travelStandards.map((r) => (<tr key={r.level}><td className="px-4 py-3">{r.level}</td><td className="px-4 py-3">{r.transport}</td><td className="px-4 py-3">{r.hotelA}</td><td className="px-4 py-3">{r.hotelB}</td><td className="px-4 py-3">{r.meal}</td></tr>))}</tbody></table>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">差旅管理最佳实践</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 bg-blue-50 rounded-lg"><h4 className="font-medium text-blue-800 mb-2">预订管理</h4><p className="text-sm text-blue-700">统一使用企业差旅平台预订可获协议价优惠8%-15%。提前7天预订机票平均节省20%-30%。</p></div>
+              <div className="p-4 bg-green-50 rounded-lg"><h4 className="font-medium text-green-800 mb-2">费用管控</h4><p className="text-sm text-green-700">实施预算前置审批，设定城市差异化标准，鼓励公共交通，季度差旅费用分析。</p></div>
+              <div className="p-4 bg-purple-50 rounded-lg"><h4 className="font-medium text-purple-800 mb-2">报销流程</h4><p className="text-sm text-purple-700">电子发票直连报销系统；差旅结束后5个工作日内提交；超标需附审批说明。</p></div>
+              <div className="p-4 bg-orange-50 rounded-lg"><h4 className="font-medium text-orange-800 mb-2">安全管理</h4><p className="text-sm text-orange-700">建立出差人员动态追踪机制；高风险地区需备案；购买企业差旅综合保险。</p></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeSection === "international" && (
+        <div className="space-y-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">热门目的地差旅指南</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {destinations.map((dest) => (
+                <div key={dest.city} className="p-4 border border-gray-100 rounded-lg">
+                  <h4 className="font-semibold text-gray-800">{dest.city}</h4>
+                  <p className="text-xs text-gray-500 mt-1">签证：{dest.visa} | 货币：{dest.currency}</p>
+                  <p className="text-sm text-gray-600 mt-2">{dest.tips}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeSection === "visa" && (
+        <div className="space-y-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">外籍员工工作签证办理流程</h3>
+            <div className="space-y-4">
+              {visaSteps.map((item) => (
+                <div key={item.step} className="flex gap-4 items-start">
+                  <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">{item.step}</div>
+                  <div><h4 className="font-medium text-gray-800">{item.title}</h4><p className="text-sm text-gray-600 mt-1">{item.desc}</p></div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">重要提醒</h3>
+            <p className="text-yellow-700 text-sm">2026年起，外国人工作许可实行全国统一网上申报系统（外国人来华工作管理服务系统 fwp.safea.gov.cn），所有申请需在线提交。建议行政人员提前注册企业账号并完成认证。</p>
+          </div>
+        </div>
+      )}
+
+      {activeSection === "platforms" && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">主流企业差旅平台对比</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="px-4 py-3 text-left font-medium text-gray-600">平台</th><th className="px-4 py-3 text-left font-medium text-gray-600">核心优势</th><th className="px-4 py-3 text-left font-medium text-gray-600">适合企业</th><th className="px-4 py-3 text-left font-medium text-gray-600">参考价格</th></tr></thead>
+            <tbody className="divide-y divide-gray-100">{platforms.map((p) => (<tr key={p.name}><td className="px-4 py-3 font-medium">{p.name}</td><td className="px-4 py-3">{p.advantage}</td><td className="px-4 py-3">{p.suitable}</td><td className="px-4 py-3">{p.price}</td></tr>))}</tbody></table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ MEETING PAGE ============
+function MeetingPage() {
+  const [activeSection, setActiveSection] = useState("venues");
+  const venueData = [
+    { city: "北京", venues: [
+      { name: "国家会议中心", capacity: "50-6000人", price: "￥8000-200000/天", features: "国际级会议中心，配套完善" },
+      { name: "北京饭店金色大厅", capacity: "30-800人", price: "￥15000-80000/天", features: "政务接待首选" },
+      { name: "中关村软件园会议中心", capacity: "20-300人", price: "￥3000-30000/天", features: "科技企业聚集区" },
+    ]},
+    { city: "上海", venues: [
+      { name: "上海国际会议中心", capacity: "50-3000人", price: "￥10000-150000/天", features: "浦东地标" },
+      { name: "上海中心大厦会议厅", capacity: "20-500人", price: "￥8000-60000/天", features: "超高层视野" },
+      { name: "虹桥国展中心", capacity: "100-10000人", price: "￥20000-500000/天", features: "展会+会议一体化" },
+    ]},
+    { city: "深圳", venues: [
+      { name: "深圳会展中心", capacity: "100-5000人", price: "￥10000-200000/天", features: "福田CBD核心" },
+      { name: "前海华侨城JW万豪", capacity: "20-600人", price: "￥5000-50000/天", features: "高端商务会议首选" },
+      { name: "南山科技园会议中心", capacity: "10-200人", price: "￥2000-15000/天", features: "科技氛围浓厚" },
+    ]},
+  ];
+  const receptionChecklist = ["确认来访人员信息", "安排停车位/发送定位", "前台准备欢迎牌", "会议室提前30分钟布置", "安排陪同人员全程服务", "餐饮提前预订（了解饮食禁忌）", "准备伴手礼", "行程结束后送别并跟进"];
+  const eventTypes = [
+    { type: "年会/周年庆", budget: "人均500-2000元", tips: "提前2-3个月策划，旺季场地提前4-6个月预订" },
+    { type: "团建活动", budget: "人均200-800元", tips: "关注安全合规，购买活动保险" },
+    { type: "新品发布会", budget: "总预算10-100万", tips: "注重传播效果，配合PR团队" },
+    { type: "行业论坛/峰会", budget: "总预算20-200万", tips: "邀请嘉宾需提前2个月" },
+    { type: "客户答谢会", budget: "人均800-3000元", tips: "注重体验和仪式感" },
+    { type: "内部培训", budget: "人均100-500元", tips: "确认讲师档期，安排反馈收集" },
+  ];
+
+  const sections = { venues: "会议场地资源", reception: "商务接待指南", events: "活动策划资源" };
+
+  return (
+    <div className="fade-in">
+      <div className="bg-gradient-to-r from-orange-500 to-orange-700 text-white rounded-xl p-6 mb-6">
+        <h1 className="text-2xl font-bold mb-2">会议商务资源对接</h1>
+        <p className="text-orange-100">会议场地、商务接待、活动策划一站式资源库</p>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-6">
+        {Object.entries(sections).map(([key, title]) => (
+          <button key={key} onClick={() => setActiveSection(key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeSection === key ? "bg-orange-600 text-white shadow-md" : "bg-white border border-gray-200 text-gray-600 hover:border-orange-300"}`}>{title}</button>
+        ))}
+      </div>
+
+      {activeSection === "venues" && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">各城市热门会议场地推荐</h3>
+          {venueData.map((cityData) => (
+            <div key={cityData.city} className="mb-4">
+              <h4 className="font-semibold text-blue-700 mb-2">{cityData.city}</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {cityData.venues.map((v) => (
+                  <div key={v.name} className="p-3 border border-gray-100 rounded-lg">
+                    <h5 className="font-medium text-gray-800 text-sm">{v.name}</h5>
+                    <p className="text-xs text-gray-500 mt-1">容量：{v.capacity} | {v.price}</p>
+                    <p className="text-xs text-blue-600 mt-1">{v.features}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeSection === "reception" && (
+        <div className="space-y-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">商务接待规范</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 border border-gray-100 rounded-lg">
+                <h4 className="font-semibold text-gray-800 mb-2">接待等级划分</h4>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p><span className="font-medium text-red-600">A级：</span>集团高管/政府领导来访，最高标准接待</p>
+                  <p><span className="font-medium text-orange-600">B级：</span>重要客户/合作伙伴高层，高标准接待</p>
+                  <p><span className="font-medium text-blue-600">C级：</span>一般商务来访/供应商，标准接待</p>
+                </div>
+              </div>
+              <div className="p-4 border border-gray-100 rounded-lg">
+                <h4 className="font-semibold text-gray-800 mb-2">接待流程清单</h4>
+                <div className="space-y-1 text-sm text-gray-600">
+                  {receptionChecklist.map((item, idx) => (<div key={idx} className="flex items-center gap-2"><Icons.Check /><span>{item}</span></div>))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">商务宴请标准</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="px-4 py-3 text-left">等级</th><th className="px-4 py-3 text-left">人均</th><th className="px-4 py-3 text-left">餐厅类型</th><th className="px-4 py-3 text-left">酒水</th></tr></thead>
+              <tbody className="divide-y divide-gray-100">
+                <tr><td className="px-4 py-3">A级</td><td className="px-4 py-3">800-1500元</td><td className="px-4 py-3">高端中餐/米其林</td><td className="px-4 py-3">茅台/名庄红酒</td></tr>
+                <tr><td className="px-4 py-3">B级</td><td className="px-4 py-3">400-800元</td><td className="px-4 py-3">中高端餐厅</td><td className="px-4 py-3">五粮液/优质红酒</td></tr>
+                <tr><td className="px-4 py-3">C级</td><td className="px-4 py-3">150-400元</td><td className="px-4 py-3">商务餐厅</td><td className="px-4 py-3">软饮/普通酒水</td></tr>
+              </tbody></table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeSection === "events" && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">企业活动类型与策划要点</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {eventTypes.map((e) => (
+              <div key={e.type} className="p-4 border border-gray-100 rounded-lg">
+                <h4 className="font-semibold text-gray-800">{e.type}</h4>
+                <p className="text-xs text-gray-500 mt-1">预算参考：{e.budget}</p>
+                <p className="text-sm text-gray-600 mt-2">{e.tips}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ SUPPLIER PAGE ============
+function SupplierPage() {
+  const [activeCategory, setActiveCategory] = useState("travel");
+  const supplierCategories = {
+    travel: { title: "差旅平台", suppliers: [
+      { name: "携程商旅", rating: 4.5, services: "机票、酒店、火车票、用车", website: "ct.ctrip.com", advantage: "全球资源覆盖最广", suitable: "中大型企业" },
+      { name: "阿里商旅", rating: 4.3, services: "机票、酒店、火车票", website: "alitrip.com", advantage: "钉钉生态无缝集成", suitable: "钉钉生态企业" },
+      { name: "滴滴企业版", rating: 4.4, services: "企业用车、接送机", website: "es.xiaojukeji.com", advantage: "用车场景全面覆盖", suitable: "市内用车需求大" },
+      { name: "差旅壹号", rating: 4.2, services: "机票、酒店、合规管控", website: "1trip.com.cn", advantage: "合规管控强", suitable: "央企/国企" },
+      { name: "合思费控", rating: 4.3, services: "费用报销、差旅预订", website: "hosecloud.com", advantage: "费控+差旅一体化", suitable: "中大型企业" },
+    ]},
+    renovation: { title: "装修与空间", suppliers: [
+      { name: "优鸿设计", rating: 4.5, services: "办公空间设计、施工、软装", website: "uhomedesign.com", advantage: "专注办公空间设计", suitable: "500㎡以上" },
+      { name: "WeWork定制", rating: 4.2, services: "灵活办公空间定制", website: "wework.cn", advantage: "灵活扩缩容", suitable: "快速扩张期企业" },
+      { name: "氪空间", rating: 4.1, services: "联合办公方案", website: "krspace.cn", advantage: "核心地段覆盖好", suitable: "中小团队" },
+      { name: "中建八局装饰", rating: 4.6, services: "大型办公楼整体装修", website: "cscec8b.com.cn", advantage: "央企资质品质保障", suitable: "整层整栋装修" },
+      { name: "圣奥家具", rating: 4.4, services: "办公家具设计制造", website: "sunon.com", advantage: "大规模定制能力", suitable: "整体家具配置" },
+    ]},
+    meeting: { title: "会议接待", suppliers: [
+      { name: "会小二", rating: 4.4, services: "会议场地预订、会务服务", website: "huixiaoer.com", advantage: "场地资源丰富，一站式", suitable: "各类规模会议" },
+      { name: "百场汇", rating: 4.3, services: "场地预订、活动策划", website: "100event.com", advantage: "活动+场地一体化", suitable: "中高端会议" },
+      { name: "酒店哥哥", rating: 4.3, services: "酒店会议场地预订", website: "hotelgg.com", advantage: "酒店会议室资源全", suitable: "酒店类会议" },
+      { name: "31会议", rating: 4.2, services: "会议管理系统", website: "31huiyi.com", advantage: "数字化会议管理", suitable: "大型论坛峰会" },
+      { name: "淘会场", rating: 4.1, services: "场地搜索在线预订", website: "taomeet.com", advantage: "价格透明种类丰富", suitable: "中小型会议" },
+    ]},
+    office: { title: "办公用品", suppliers: [
+      { name: "京东企业购", rating: 4.5, services: "办公用品、IT设备", website: "e.jd.com", advantage: "品类齐全物流快", suitable: "各类型企业" },
+      { name: "得力集团", rating: 4.4, services: "办公文具设备", website: "nbdeli.com", advantage: "国产性价比高", suitable: "文具设备采购" },
+      { name: "震旦集团", rating: 4.5, services: "办公家具OA设备", website: "aurora.com.tw", advantage: "高端办公家具", suitable: "中高端家具" },
+      { name: "齐心集团", rating: 4.3, services: "办公用品数码设备", website: "comix.com.cn", advantage: "B2B平台成熟", suitable: "大批量采购" },
+    ]},
+    property: { title: "物业后勤", suppliers: [
+      { name: "万科物业", rating: 4.6, services: "写字楼物业管理", website: "vankeservice.com", advantage: "服务标准化程度高", suitable: "甲级写字楼" },
+      { name: "美团企业版", rating: 4.3, services: "企业团餐、下午茶", website: "e.meituan.com", advantage: "覆盖面广灵活点餐", suitable: "灵活用餐需求" },
+      { name: "ISS综合设施", rating: 4.4, services: "保洁/安保/绿化", website: "issworld.com", advantage: "全球500强服务经验", suitable: "外企跨国公司" },
+    ]},
+    gifts: { title: "礼品福利", suppliers: [
+      { name: "京东锦礼", rating: 4.4, services: "企业礼品员工福利", website: "gift.jd.com", advantage: "品类丰富自选灵活", suitable: "节日福利客户礼品" },
+      { name: "关爱通", rating: 4.3, services: "弹性福利平台", website: "guanaitong.com", advantage: "积分制弹性福利", suitable: "500人以上企业" },
+      { name: "中粮礼品册", rating: 4.3, services: "食品礼盒节日礼品", website: "cofcostore.com", advantage: "央企品牌食品安全", suitable: "节日食品礼盒" },
+    ]},
+  };
+
+  return (
+    <div className="fade-in">
+      <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 text-white rounded-xl p-6 mb-6">
+        <h1 className="text-2xl font-bold mb-2">供应商资源资讯</h1>
+        <p className="text-indigo-100">精选优质供应商，涵盖差旅、装修、会议接待、办公用品等核心领域</p>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-6">
+        {Object.entries(supplierCategories).map(([key, cat]) => (
+          <button key={key} onClick={() => setActiveCategory(key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeCategory === key ? "bg-indigo-600 text-white shadow-md" : "bg-white border border-gray-200 text-gray-600 hover:border-indigo-300"}`}>{cat.title}</button>
+        ))}
+      </div>
+      <div className="space-y-4">
+        {supplierCategories[activeCategory].suppliers.map((s, idx) => (
+          <div key={idx} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">{s.name}</h3>
+                <p className="text-sm text-blue-500 mt-1">{s.website}</p>
+              </div>
+              <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded">
+                <Icons.Star /><span className="text-sm font-medium text-yellow-700">{s.rating}</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div><span className="text-gray-500">服务：</span><span className="text-gray-700">{s.services}</span></div>
+              <div><span className="text-gray-500">优势：</span><span className="text-gray-700">{s.advantage}</span></div>
+              <div><span className="text-gray-500">适合：</span><span className="text-gray-700">{s.suitable}</span></div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">供应商选择建议</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+          <div className="p-3 bg-white rounded-lg"><h4 className="font-medium text-gray-800 mb-1">入库评估维度</h4><p>企业资质、服务能力、价格竞争力、售后响应时效、财务稳定性、客户口碑。建议制定标准化评分卡。</p></div>
+          <div className="p-3 bg-white rounded-lg"><h4 className="font-medium text-gray-800 mb-1">管理机制</h4><p>建立供应商分级制度（战略/核心/一般）；年度绩效评估；每类别保持2-3家备选。</p></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ MAIN APP ============
+function App() {
+  const [activeTab, setActiveTab] = useState("home");
+  const navItems = [
+    { id: "home", label: "首页", icon: <Icons.Home /> },
+    { id: "knowledge", label: "知识提升", icon: <Icons.Book /> },
+    { id: "policy", label: "政策解析", icon: <Icons.Policy /> },
+    { id: "travel", label: "差旅签证", icon: <Icons.Travel /> },
+    { id: "meeting", label: "会议资源", icon: <Icons.Meeting /> },
+    { id: "supplier", label: "供应商", icon: <Icons.Supplier /> },
+  ];
+
+  const renderPage = () => {
+    switch (activeTab) {
+      case "home": return <HomePage setActiveTab={setActiveTab} />;
+      case "knowledge": return <KnowledgePage />;
+      case "policy": return <PolicyPage />;
+      case "travel": return <TravelPage />;
+      case "meeting": return <MeetingPage />;
+      case "supplier": return <SupplierPage />;
+      default: return <HomePage setActiveTab={setActiveTab} />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab("home")}>
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center"><span className="text-white font-bold text-sm">A</span></div>
+              <h1 className="text-lg font-bold text-gray-800">行政赋能平台</h1>
+            </div>
+            <nav className="hidden md:flex items-center gap-1">
+              {navItems.map((item) => (
+                <button key={item.id} onClick={() => setActiveTab(item.id)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === item.id ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50"}`}>
+                  {item.icon}<span>{item.label}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
+        <div className="md:hidden border-t border-gray-100 px-2 py-2 flex overflow-x-auto gap-1">
+          {navItems.map((item) => (
+            <button key={item.id} onClick={() => setActiveTab(item.id)} className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap ${activeTab === item.id ? "bg-blue-50 text-blue-700" : "text-gray-600"}`}>
+              {item.icon}<span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </header>
+      <main className="max-w-7xl mx-auto px-4 py-8">{renderPage()}</main>
+      <footer className="bg-white border-t border-gray-200 mt-12">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-gray-500">行政工作人员赋能平台 · 提升效率 · 创造价值</p>
+          <p className="text-sm text-gray-400">最后更新：{SITE_DATA.lastUpdated} | 数据仅供参考</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
